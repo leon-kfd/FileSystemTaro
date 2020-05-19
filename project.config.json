@@ -2,13 +2,22 @@
 	"miniprogramRoot": "dist/",
 	"projectname": "FileSystemTaro",
 	"description": "个人网盘",
-	"appid": "touristappid",
+	"appid": "wx60b9f61f6049b4b3",
 	"setting": {
-		"urlCheck": true,
-		"es6": false,
+		"urlCheck": false,
+		"es6": true,
 		"postcss": false,
 		"minified": false,
-		"newFeature": true
+		"newFeature": true,
+		"nodeModules": true,
+		"checkInvalidKey": true,
+		"checkSiteMap": true,
+		"uploadWithSourceMap": true,
+		"babelSetting": {
+			"ignore": [],
+			"disablePlugins": [],
+			"outputPath": ""
+		}
 	},
 	"compileType": "miniprogram",
 	"simulatorType": "wechat",

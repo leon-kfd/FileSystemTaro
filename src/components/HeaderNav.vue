@@ -6,17 +6,30 @@
     <view class="nav-item">
       回收站
     </view>
-    <view class="nav-item">
+    <view class="nav-item"
+          @tap="turnToPersonal">
       我
     </view>
   </view>
 </template>
 
 <script>
+import Taro from '@tarojs/taro'
 export default {
   name: 'HeaderNav',
   data () {
     return {
+    }
+  },
+  methods: {
+    turnToPersonal () {
+      console.log(1)
+      Taro.redirectTo({
+        url: '/pages/personal/index'
+      })
+      // Taro.switchTab({
+      //   url: '/page/personal/index'
+      // })
     }
   }
 }
