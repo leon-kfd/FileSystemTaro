@@ -41,4 +41,29 @@ const typesMap = {
   exe: iconsMap.exe,
   unknown: iconsMap.white
 }
-export default typesMap
+
+const iconFormatter = (fileName, isFolder) => {
+  if (!fileName) return typesMap.folder
+  if (isFolder) return typesMap.folder
+  const arr = fileName.split('.')
+  if (arr.length > 1) {
+    const type = arr[arr.length - 1]
+    return typesMap[type] || typesMap.unknown
+  } else {
+    return typesMap.unknown
+  }
+}
+
+const sizeFormatter = (size) => {
+  return size < 1024 * 1024
+    ? `${parseFloat((size / 1024).toFixed(1))} KB`
+    : size < 1024 * 1024 * 1024
+      ? `${parseFloat((size / (1024 * 1024)).toFixed(1))} MB`
+      : `${parseFloat((size / (1024 * 1024 * 1024)).toFixed(1))} GB`
+}
+
+export {
+  typesMap,
+  iconFormatter,
+  sizeFormatter
+}

@@ -4,6 +4,7 @@ module.exports = {
   'extends': ['taro/vue'],
   rules: {
     "vue/max-attributes-per-line": "off",
-    "vue/html-closing-bracket-newline": "off"
+    "vue/html-closing-bracket-newline": "off",
+    'vue/attribute-hyphenation': 'off'
   },
 }

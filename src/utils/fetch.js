@@ -5,7 +5,7 @@ const interceptor = function (chain) {
   return chain.proceed(requestParams).then(res => {
     const data = res.data
     if (data.errCode === 200) {
-      return data.data
+      return Promise.resolve(data.data)
     } else {
       Notify({
         type: 'danger',
@@ -13,7 +13,7 @@ const interceptor = function (chain) {
         message: data.errMsg,
         duration: 1000,
       })
-      return data.errMsg
+      return Promise.reject(data.errMsg)
     }
   }, err => {
     Notify({
@@ -26,7 +26,7 @@ const interceptor = function (chain) {
   })
 }
 Taro.addInterceptor(interceptor)
-const baseURL = 'http://localhost:5001/storage'
+export const baseURL = 'http://localhost:5001/storage'
 export const instance = (method, url, data, options) => {
   return Taro.request({
     dataType: 'json',
