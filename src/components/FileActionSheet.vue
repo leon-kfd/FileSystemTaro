@@ -46,6 +46,9 @@
         </view>
         <view v-if="type==='trash'"
               class="operation-list">
+          <view class="trash-form">
+            来源: {{ actionFileInfo.fromPath || '未知' }}
+          </view>
           <view class="operation-list-item"
                 @tap="handleTrashRestore">
             <van-icon name="replay"
@@ -189,8 +192,12 @@ export default {
       })
     },
     handleTrashRestore () {
-      this.$emit('update:actionVisible', false)
-      this.restore([this.actionFileInfo])
+      if (this.actionFileInfo.fromPath) {
+        this.$emit('update:actionVisible', false)
+        this.restore([this.actionFileInfo])
+      } else {
+        this.$notify({ type: 'warning', message: '文件来源已丢失，无法还原', duration: 2500 })
+      }
     },
     hanldeShieldDelete () {
       this.$emit('update:actionVisible', false)
@@ -319,6 +326,12 @@ $main-color: #520cd4;
         border-left: 10px solid $main-color;
       }
     }
+  }
+  .trash-form {
+    font-size: 24px;
+    margin: 10px 20px;
+    color: #999;
+    line-height: 1.4;
   }
 }
 </style>

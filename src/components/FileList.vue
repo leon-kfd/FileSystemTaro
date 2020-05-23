@@ -20,7 +20,7 @@
         </view>
         <view v-else
               class="trash-from">
-          来源: {{ item.fromPath }}
+          来源: {{ item.fromPath || '未知' }}
         </view>
       </view>
       <view class="opeartion">
@@ -90,7 +90,6 @@ export default {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        display: flex;
         align-items: center;
       }
     }
