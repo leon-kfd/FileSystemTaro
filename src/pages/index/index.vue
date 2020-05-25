@@ -1,33 +1,41 @@
 <template>
   <view class="home">
-    <van-notify id="van-notify" />
-    <van-dialog id="van-dialog" />
-    <HeaderNav :active-nav="activeNav"
-               @onChangeNav="changeNav" />
-    <view v-if="activeNav === 0"
-          class="home-content">
-      <FolderPath :current-path-arr="currentPathArr"
-                  @onPathClick="handlePathClick" />
-      <FileList :file-list="computedFileList"
-                @onOpen="handleOpen"
-                @onShowAction="handleShowFileAction" />
-      <FileActionSheet :current-path-arr="currentPathArr"
-                       :action-visible.sync="actionVisible"
-                       :action-file-info="actionFileInfo"
-                       type="file"
-                       @onNeedRefresh="getData" />
-      <FileOperationFooter :current-path-arr="currentPathArr"
-                           :file-list="computedFileList"
-                           @onNeedRefresh="getData" />
+    <view v-if="!isLogin">
+      正在登录...
     </view>
-    <view v-if="activeNav === 1">
-      <FileList :file-list="computedTrashList"
-                :is-trash="true"
-                @onShowAction="handleShowTrashAction" />
-      <FileActionSheet :action-visible.sync="trashActionVisible"
-                       :action-file-info="actionTrashInfo"
-                       type="trash"
-                       @onNeedRefresh="getTrashList" />
+    <view v-else>
+      <van-notify id="van-notify" />
+      <van-dialog id="van-dialog" />
+      <HeaderNav :active-nav="activeNav"
+                 @onChangeNav="changeNav" />
+      <view v-if="activeNav === 0"
+            class="home-content">
+        <FolderPath :current-path-arr="currentPathArr"
+                    @onPathClick="handlePathClick" />
+        <FileList :file-list="computedFileList"
+                  :in-choose="inChoose"
+                  :selected-list.sync="selectedList"
+                  @onOpen="handleOpen"
+                  @onShowAction="handleShowFileAction" />
+        <FileActionSheet :current-path-arr="currentPathArr"
+                         :action-visible.sync="actionVisible"
+                         :action-file-info="actionFileInfo"
+                         type="file"
+                         @onNeedRefresh="getData" />
+        <FileOperationFooter :current-path-arr="currentPathArr"
+                             :file-list="computedFileList"
+                             @onNeedRefresh="getData"
+                             @onBatchOperation="handleBatchOperation" />
+      </view>
+      <view v-if="activeNav === 1">
+        <FileList :file-list="computedTrashList"
+                  :is-trash="true"
+                  @onShowAction="handleShowTrashAction" />
+        <FileActionSheet :action-visible.sync="trashActionVisible"
+                         :action-file-info="actionTrashInfo"
+                         type="trash"
+                         @onNeedRefresh="getTrashList" />
+      </view>
     </view>
   </view>
 </template>
@@ -60,7 +68,10 @@ export default {
       actionVisible: false,
       actionFileInfo: {},
       trashActionVisible: false,
-      actionTrashInfo: {}
+      actionTrashInfo: {},
+      selectedList: [],
+      isLogin: true,
+      inChoose: false
     }
   },
   computed: {
@@ -94,10 +105,28 @@ export default {
       immediate: true
     },
   },
-  mounted () {
+  created () {
+    // this.autoLogin()
     this.getData()
   },
   methods: {
+    // autoLogin () {
+    //   const _this = this
+    //   wx.login({
+    //     success (res) {
+    //       if (res.code) {
+    //         _this.isLogin = true
+    //         _this.$get('/wechatLogin', {
+    //           code: res.code
+    //         }).then(data => {
+    //           console.log(data)
+    //         })
+    //       } else {
+    //         console.log('登录失败！' + res.errMsg)
+    //       }
+    //     }
+    //   })
+    // },
     handlePathClick (path) {
       const index = this.currentPathArr.findIndex(item => item === path)
       if (~index) {
@@ -143,6 +172,9 @@ export default {
     handleShowTrashAction (item) {
       this.trashActionVisible = true
       this.actionTrashInfo = item
+    },
+    handleBatchOperation () {
+      this.inChoose = true
     }
   }
 }

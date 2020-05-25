@@ -21,7 +21,8 @@
       </view>
     </view>
     <view class="right-btn">
-      <view class="set-batch">
+      <view class="set-batch"
+            @tap="handleBatchOperation">
         <cover-image class="icon"
                      :src="batchImg" /> 批量操作
       </view>
@@ -103,16 +104,9 @@ export default {
     },
     handleUpload () {
       this.uploadActionVisible = true
-      // wx.chooseImage({
-      //   count: 1,
-      //   sizeType: ['original', 'compressed'],
-      //   sourceType: ['album', 'camera'],
-      //   success (res) {
-      //     // tempFilePath可以作为img标签的src属性显示图片
-      //     const tempFilePaths = res.tempFilePaths
-      //     console.log('i')
-      //   }
-      // })
+    },
+    handleBatchOperation () {
+      this.$emit('onBatchOperation')
     }
   }
 }

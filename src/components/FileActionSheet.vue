@@ -13,7 +13,7 @@
           <cover-image class="icon"
                        :src="actionFileInfo.icon" />
           <view class="file-name">
-            {{ actionFileInfo.fileName }}
+            {{ actionFileInfo.showFileName || actionFileInfo.fileName }}
           </view>
         </view>
         <view v-if="type==='file'"
@@ -46,6 +46,9 @@
         </view>
         <view v-if="type==='trash'"
               class="operation-list">
+          <view class="trash-time">
+            时间: {{ actionFileInfo.updatedTime|| '未知' }}
+          </view>
           <view class="trash-form">
             来源: {{ actionFileInfo.fromPath || '未知' }}
           </view>
@@ -68,17 +71,17 @@
             上传方式
           </view>
           <view class="operation-list-item"
-                @tap="handleUploadLocalImg">
+                @tap="handleUploadFile(1)">
             <van-icon name="photo-o"
                       size="24px" /> 上传本地图片
           </view>
           <view class="operation-list-item"
-                @tap="handleUploadLocalVideo">
+                @tap="handleUploadFile(2)">
             <van-icon name="video-o"
                       size="24px" /> 上传本地视频
           </view>
           <view class="operation-list-item"
-                @tap="handleUploadChatFile">
+                @tap="handleUploadFile(3)">
             <van-icon name="chat-o"
                       size="24px" /> 从聊天文件中选取
           </view>
@@ -252,43 +255,62 @@ export default {
         // on cancel
       });
     },
-    handleUploadLocalImg () {
+    handleUploadFile (type = 1) {
       const _this = this
-      wx.chooseImage({
-        count: 1,
-        sizeType: ['original', 'compressed'],
-        sourceType: ['album', 'camera'],
-        success (res) {
-          _this.$emit('update:actionVisible', false)
-          const filePaths = res.tempFilePaths
-          filePaths.map(item => {
-            Taro.uploadFile({
-              url: _this.$baseURL + '/simpleUpload',
-              filePath: item,
-              name: 'file',
-              formData: {
-                targetPath: _this.currentPathArr.join('/')
+      const callback = (res) => {
+        _this.$emit('update:actionVisible', false)
+        const filePaths = res.tempFilePaths
+        filePaths.map(item => {
+          Taro.uploadFile({
+            url: _this.$baseURL + '/simpleUpload',
+            filePath: item,
+            name: 'file',
+            formData: {
+              targetPath: _this.currentPathArr.join('/')
+            }
+          }).then(data => {
+            try {
+              const res = JSON.parse(data.data)
+              if (res.errCode === 200) {
+                const { fileName } = res.data
+                _this.$notify({ type: 'success', message: `上传成功，文件保存为${fileName}`, duration: 2000 })
+                _this.$emit('onNeedRefresh')
+              } else {
+                _this.$notify({ type: 'success', message: `上传失败，${res.errMsg}`, duration: 2000 })
               }
-            }).then(data => {
-              try {
-                const res = JSON.parse(data.data)
-                if (res.errCode === 200) {
-                  const { fileName } = res.data
-                  _this.$notify({ type: 'success', message: `上传成功，文件保存为${fileName}`, duration: 2000 })
-                  _this.$emit('onNeedRefresh')
-                } else {
-                  _this.$notify({ type: 'success', message: `上传失败，${res.errMsg}`, duration: 2000 })
-                }
-              } catch (e) {
-                _this.$notify({ type: 'success', message: `上传失败，服务端错误`, duration: 2000 })
-              }
-            })
+            } catch (e) {
+              _this.$notify({ type: 'success', message: `上传失败，服务端错误`, duration: 2000 })
+            }
           })
-        }
-      })
-    },
-    handleUploadLocalVideo () { },
-    handleUploadChatFile () { }
+        })
+      }
+      if (type === 1) {
+        wx.chooseImage({
+          count: 1,
+          sizeType: ['original', 'compressed'],
+          sourceType: ['album', 'camera'],
+          success (res) {
+            callback(res)
+          }
+        })
+      } else if (type === 2) {
+        wx.chooseVideo({
+          sourceType: ['album', 'camera'],
+          maxDuration: 60,
+          camera: 'back',
+          success (res) {
+            callback(res)
+          }
+        })
+      } else if (type === 3) {
+        wx.chooseMessageFile({
+          count: 1,
+          success (res) {
+            callback(res)
+          }
+        })
+      }
+    }
   }
 }
 </script>
@@ -327,6 +349,7 @@ $main-color: #520cd4;
       }
     }
   }
+  .trash-time,
   .trash-form {
     font-size: 24px;
     margin: 10px 20px;

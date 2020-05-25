@@ -1,7 +1,6 @@
 export default {
   pages: [
-    'pages/index/index',
-    'pages/personal/index'
+    'pages/index/index'
   ],
   window: {
     backgroundTextStyle: 'light',

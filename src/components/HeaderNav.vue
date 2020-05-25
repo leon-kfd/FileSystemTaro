@@ -22,7 +22,7 @@ export default {
   },
   data () {
     return {
-      nav: ['个人网盘', '回收站', '我']
+      nav: ['个人网盘', '回收站']
     }
   },
   methods: {
@@ -44,7 +44,7 @@ $main-color: #520cd4;
   background: #fff;
   z-index: 99;
   .nav-item {
-    width: 33.33%;
+    width: 50%;
     text-align: center;
     line-height: 72px;
     position: relative;
