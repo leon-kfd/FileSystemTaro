@@ -10,8 +10,8 @@
             @tap.stop="">
         <view v-if="type!=='upload'"
               class="operation-header">
-          <cover-image class="icon"
-                       :src="actionFileInfo.icon" />
+          <image class="icon"
+                 :src="actionFileInfo.icon" />
           <view class="file-name">
             {{ actionFileInfo.showFileName || actionFileInfo.fileName }}
           </view>
@@ -25,7 +25,8 @@
                       size="24px" /> 下载
           </view>
           <view v-show="actionFileInfo.isFolder"
-                class="operation-list-item">
+                class="operation-list-item"
+                @tap="handleActionOpen">
             <van-icon name="circle"
                       size="24px" /> 打开
           </view>
@@ -150,6 +151,9 @@ export default {
     handleActionDelete () {
       this.$emit('update:actionVisible', false)
       this.delete([this.actionFileInfo])
+    },
+    handleActionOpen () {
+      this.$emit('onOpen', this.actionFileInfo)
     },
     handleActionRename () {
       this.$emit('update:actionVisible', false)

@@ -2,6 +2,8 @@ import Taro from '@tarojs/taro'
 import Notify from '../components/vant/notify/notify';
 const interceptor = function (chain) {
   const requestParams = chain.requestParams
+  const sessionId = Taro.getStorageSync('sessionId')
+  if (sessionId) requestParams.header.sessionId = sessionId
   return chain.proceed(requestParams).then(res => {
     const data = res.data
     if (data.errCode === 200) {
@@ -26,7 +28,7 @@ const interceptor = function (chain) {
   })
 }
 Taro.addInterceptor(interceptor)
-export const baseURL = 'http://localhost:5001/storage'
+export const baseURL = 'https://www.kongfandong.cn/storage'
 export const instance = (method, url, data, options) => {
   return Taro.request({
     dataType: 'json',

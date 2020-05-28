@@ -13,7 +13,7 @@
         <FolderPath :current-path-arr="currentPathArr"
                     @onPathClick="handlePathClick" />
         <FileList :file-list="computedFileList"
-                  :in-choose="inChoose"
+                  :in-choose.sync="inChoose"
                   :selected-list.sync="selectedList"
                   @onOpen="handleOpen"
                   @onShowAction="handleShowFileAction" />
@@ -21,11 +21,15 @@
                          :action-visible.sync="actionVisible"
                          :action-file-info="actionFileInfo"
                          type="file"
+                         @onOpen="handleOpen"
                          @onNeedRefresh="getData" />
-        <FileOperationFooter :current-path-arr="currentPathArr"
+        <FileOperationFooter :in-choose="inChoose"
+                             :current-path-arr="currentPathArr"
                              :file-list="computedFileList"
+                             :selected-list="selectedList"
                              @onNeedRefresh="getData"
-                             @onBatchOperation="handleBatchOperation" />
+                             @onBatchOperation="handleBatchOperation"
+                             @onBatchCancel="inChoose=false" />
       </view>
       <view v-if="activeNav === 1">
         <FileList :file-list="computedTrashList"
@@ -55,7 +59,7 @@ export default {
     FolderPath,
     FileList,
     FileActionSheet,
-    FileOperationFooter
+    FileOperationFooter,
   },
   data () {
     return {
@@ -106,27 +110,54 @@ export default {
     },
   },
   created () {
-    // this.autoLogin()
-    this.getData()
+    Taro.login().then(data => {
+      if (data.code) {
+        this.$post('/wechatLogin', {
+          code: data.code
+        }).then(data => {
+          const { sessionId } = data
+          Taro.setStorageSync('sessionId', sessionId)
+          this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
+          this.getData()
+        }, () => {
+          this.handleError(3)
+        })
+      } else {
+        this.handleError(2)
+      }
+    }, () => {
+      this.handleError(1)
+    })
+    // this.auth()
   },
   methods: {
-    // autoLogin () {
-    //   const _this = this
-    //   wx.login({
-    //     success (res) {
-    //       if (res.code) {
-    //         _this.isLogin = true
-    //         _this.$get('/wechatLogin', {
-    //           code: res.code
-    //         }).then(data => {
-    //           console.log(data)
-    //         })
-    //       } else {
-    //         console.log('登录失败！' + res.errMsg)
-    //       }
-    //     }
-    //   })
-    // },
+    handleError (e) {
+      this.$notify({ type: 'danger', message: e || '登录失败', duration: 1000 })
+    },
+    auth () {
+      Taro.checkSession().then(data => {
+        this.getData()
+      }, () => {
+        Taro.login().then(data => {
+          if (data.code) {
+            this.$post('/wechatLogin', {
+              code: data.code
+            }).then(data => {
+              const { sessionId } = data
+              Taro.setStorageSync('sessionId', sessionId)
+              this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
+              this.getData()
+            }, () => {
+              this.handleError(3)
+            })
+          } else {
+            this.handleError(2)
+          }
+        }, () => {
+          this.handleError(1)
+        })
+      })
+    },
     handlePathClick (path) {
       const index = this.currentPathArr.findIndex(item => item === path)
       if (~index) {
@@ -135,11 +166,34 @@ export default {
       }
     },
     getData () {
+      this.inChoose = false
+      this.selectedList = []
       this.$nextTick(() => {
         this.$get('/getFileList', {
           currentPath: this.currentPathParams
         }).then(data => {
           this.fileList = data
+        }, data => {
+          if (data.errCode === 300) {
+            Taro.login().then(data => {
+              if (data.code) {
+                this.$post('/wechatLogin', {
+                  code: data.code
+                }).then(data => {
+                  const { sessionId } = data
+                  Taro.setStorageSync('sessionId', sessionId)
+                  this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
+                  this.getData()
+                }, () => {
+                  handleError(3)
+                })
+              } else {
+                handleError(2)
+              }
+            }, () => {
+              handleError(1)
+            })
+          }
         })
       })
     },

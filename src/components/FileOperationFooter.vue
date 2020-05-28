@@ -1,30 +1,70 @@
 <template>
   <view class="file-operation-footer">
-    <view class="upload-btn-box"
-          @tap="handleUpload">
-      <view class="upload-icon-box">
-        <view class="upload-icon">
-          <van-icon name="plus"
-                    size="32px"
-                    color="#fff" />
+    <view v-if="!inChoose"
+          class="common-footer">
+      <view class="upload-btn-box"
+            @tap="handleUpload">
+        <view class="upload-icon-box">
+          <view class="upload-icon">
+            <van-icon name="plus"
+                      size="32px"
+                      color="#fff" />
+          </view>
+        </view>
+        <view class="upload-text">
+          上传
         </view>
       </view>
-      <view class="upload-text">
-        上传
+      <view class="left-btn">
+        <view class="new-folder"
+              @tap="handleShowNewFolder">
+          <image class="icon"
+                 :src="folderImg" /> 新建文件夹
+        </view>
+      </view>
+      <view class="right-btn">
+        <view class="set-batch"
+              @tap="handleBatchOperation">
+          <image class="icon"
+                 :src="batchImg" /> 批量操作
+        </view>
       </view>
     </view>
-    <view class="left-btn">
-      <view class="new-folder"
-            @tap="handleShowNewFolder">
-        <cover-image class="icon"
-                     :src="folderImg" /> 新建文件夹
+    <view v-else
+          class="batch-footer">
+      <view class="operation-list-item"
+            :class="{disabled: !hasChoose}">
+        <van-icon name="records"
+                  :color="hasChoose?'#fff':'#805D91'"
+                  size="24px" />
+        <view class="text">
+          移动
+        </view>
       </view>
-    </view>
-    <view class="right-btn">
-      <view class="set-batch"
-            @tap="handleBatchOperation">
-        <cover-image class="icon"
-                     :src="batchImg" /> 批量操作
+      <view class="operation-list-item"
+            :class="{disabled: !hasChoose}"
+            @tap="handleBatchDelete">
+        <van-icon name="delete"
+                  :color="hasChoose?'#fff':'#805D91'"
+                  size="24px" />
+        <view class="text">
+          删除
+        </view>
+      </view>
+      <view class="operation-list-item"
+            :class="{disabled: !hasChoose}">
+        <van-icon name="exchange"
+                  :color="hasChoose?'#fff':'#805D91'"
+                  size="24px" />
+        <view class="text">
+          分享
+        </view>
+      </view>
+      <view class="cancel-batch"
+            @tap="handleBatchCancel">
+        <view class="text">
+          取消批量
+        </view>
       </view>
     </view>
     <van-dialog :useSlot="true"
@@ -44,7 +84,8 @@
         </view>
       </view>
     </van-dialog>
-    <FileActionSheet :action-visible.sync="uploadActionVisible"
+    <FileActionSheet ref="fileAction"
+                     :action-visible.sync="uploadActionVisible"
                      :current-path-arr="currentPathArr"
                      type="upload"
                      @onNeedRefresh="onNeedRefresh" />
@@ -65,6 +106,14 @@ export default {
     currentPathArr: {
       type: Array,
       default: () => []
+    },
+    inChoose: {
+      type: Boolean,
+      default: false
+    },
+    selectedList: {
+      type: Array,
+      default: () => []
     }
   },
   data () {
@@ -74,6 +123,11 @@ export default {
       newFolderVisible: false,
       newFolderName: '',
       uploadActionVisible: false
+    }
+  },
+  computed: {
+    hasChoose () {
+      return this.selectedList.length > 0
     }
   },
   methods: {
@@ -107,6 +161,13 @@ export default {
     },
     handleBatchOperation () {
       this.$emit('onBatchOperation')
+    },
+    handleBatchCancel () {
+      this.$emit('onBatchCancel')
+    },
+    handleBatchDelete () {
+      const selectedList = this.fileList.filter(item => this.selectedList.includes(item.fileName))
+      this.$refs.fileAction.delete(selectedList)
     }
   }
 }
@@ -114,100 +175,149 @@ export default {
 <style lang='scss'>
 $main-color: #520cd4;
 .file-operation-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100px;
-  background: #fff;
-  z-index: 99;
-  &:after {
-    content: '';
-    position: absolute;
-    bottom: 94px;
+  .common-footer {
+    position: fixed;
+    bottom: 0;
     left: 0;
     width: 100%;
-    border-top: 4px solid #262626;
-  }
-  .upload-btn-box {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 0;
-    width: 30%;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    z-index: 100;
-    &::before {
-      z-index: -1;
+    height: 100px;
+    background: #fff;
+    z-index: 99;
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+    &:after {
       content: '';
-      top: -18px;
       position: absolute;
-      width: 102px;
-      height: 102px;
-      border-radius: 50%;
-      background: #fff;
-      border: 4px solid #262626;
-      border-left: 4px solid transparent;
-      border-bottom: 4px solid transparent;
-      transform: rotate(-45deg);
-    }
-    .upload-icon-box {
+      bottom: 94px;
+      bottom: calc(constant(safe-area-inset-bottom) + 94px);
+      bottom: calc(env(safe-area-inset-bottom) + 94px);
+      left: 0;
       width: 100%;
-      .upload-icon {
-        width: 84px;
-        height: 84px;
-        margin: 0 auto;
+      border-top: 4px solid #262626;
+    }
+    .upload-btn-box {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      width: 30%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      z-index: 100;
+      padding-bottom: constant(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom);
+      &::before {
+        z-index: -1;
+        content: '';
+        top: -18px;
+        position: absolute;
+        width: 102px;
+        height: 102px;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: space-around;
-        background: $main-color;
-        box-shadow: 0 0 4px $main-color;
-        transform: translateY(-4px);
+        background: #fff;
+        border: 4px solid #262626;
+        border-left: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        transform: rotate(-45deg);
+      }
+      .upload-icon-box {
+        width: 100%;
+        .upload-icon {
+          width: 84px;
+          height: 84px;
+          margin: 0 auto;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+          background: $main-color;
+          box-shadow: 0 0 4px $main-color;
+          transform: translateY(-4px);
+        }
+      }
+      .upload-text {
+        padding: 8px 0;
+        color: #262626;
+        font-size: 24px;
       }
     }
-    .upload-text {
-      padding: 8px 0;
-      color: #262626;
-      font-size: 24px;
-    }
-  }
-  .left-btn,
-  .right-btn {
-    position: absolute;
-    bottom: 0;
-    width: 35%;
-    height: 92px;
-    padding: 0 3%;
-    display: flex;
-    align-items: center;
-    .new-folder,
-    .set-batch {
-      width: 100%;
-      height: 72px;
-      border-radius: 36px;
-      background: rgb(255, 249, 240);
+    .left-btn,
+    .right-btn {
+      position: absolute;
+      bottom: 0;
+      width: 35%;
+      height: 92px;
+      padding: 0 3%;
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: #262626;
-      font-size: 28px;
-      .icon {
-        width: 36px;
-        height: 36px;
-        margin-right: 10px;
+      padding-bottom: constant(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom);
+      .new-folder,
+      .set-batch {
+        width: 100%;
+        height: 72px;
+        border-radius: 36px;
+        background: rgb(255, 249, 240);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #262626;
+        font-size: 28px;
+        .icon {
+          width: 36px;
+          height: 36px;
+          margin-right: 10px;
+        }
+      }
+    }
+    .left-btn {
+      left: 0;
+    }
+    .right-btn {
+      right: 0;
+    }
+  }
+  .batch-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    height: 120px;
+    align-items: center;
+    background: rgb(51, 7, 92);
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+    .operation-list-item {
+      width: 22%;
+      text-align: center;
+      &.disabled {
+        .text {
+          color: #805d91;
+        }
+      }
+      .text {
+        font-size: 24px;
+        color: #fff;
+      }
+    }
+    .cancel-batch {
+      width: 34%;
+      .text {
+        margin: 0 auto;
+        height: 72px;
+        border-radius: 36px;
+        width: 80%;
+        background: rgb(228, 218, 238);
+        text-align: center;
+        line-height: 80px;
+        color: rgb(167, 61, 13);
       }
     }
   }
-  .left-btn {
-    left: 0;
-  }
-  .right-btn {
-    right: 0;
-  }
 }
+
 .folder-input-box {
   display: flex;
   align-items: center;

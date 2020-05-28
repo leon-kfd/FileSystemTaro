@@ -1,15 +1,15 @@
 <template>
   <view class="file-list">
-    <van-checkbox-group :value="list"
+    <van-checkbox-group v-if="inChoose"
+                        :value="selectedList"
                         @change="handleCheckboxGroupChange">
-      <component :is="inChoose?'van-checkbox':'view'"
-                 v-for="(item,index) in fileList"
-                 :key="`${item.fileName}${index}`"
-                 :name="item.fileName"
-                 checkedColor="#520cd4">
+      <van-checkbox v-for="(item,index) in fileList"
+                    :key="`${item.fileName}${index}`"
+                    :name="item.fileName"
+                    checkedColor="#520cd4">
         <view class="file-listitem">
-          <cover-image class="icon"
-                       :src="item.icon" />
+          <image class="icon"
+                 :src="item.icon" />
           <view class="file-info"
                 @tap="handleOpen(item)">
             <view class="file-name">
@@ -34,14 +34,64 @@
             </view>
           </view>
           <view class="opeartion"
-                :style="inChoose?'opacity:0':'opacity:1'">
+                style="visibility: hidden;">
+            <van-icon name="ellipsis"
+                      size="30px" />
+          </view>
+        </view>
+      </van-checkbox>
+    </van-checkbox-group>
+    <view v-else>
+      <view v-for="(item,index) in fileList"
+            :key="`${item.fileName}${index}`">
+        <view class="file-listitem">
+          <image class="icon"
+                 :src="item.icon" />
+          <view class="file-info"
+                @tap="handleOpen(item)">
+            <view class="file-name">
+              {{ item.showFileName || item.fileName }}
+            </view>
+            <view v-if="!isTrash"
+                  class="file-updated-time">
+              <view>{{ item.updatedTime }}</view>
+              <view v-if="!item.isFolder"
+                    style="margin-left: 10px">
+                {{ item.size }}
+              </view>
+            </view>
+            <view v-if="isTrash"
+                  class="trash-info">
+              <view class="trash-time">
+                时间: {{ item.updatedTime }}
+              </view>
+              <view class="trash-from">
+                来源: {{ item.fromPath || '未知' }}
+              </view>
+            </view>
+          </view>
+          <view class="opeartion">
             <van-icon name="ellipsis"
                       size="30px"
                       @tap="handleShowAction(item)" />
           </view>
         </view>
-      </component>
-    </van-checkbox-group>
+      </view>
+    </view>
+    <view v-show="inChoose"
+          class="batch-select-header">
+      <view class="left"
+            @tap="handleSelectAll">
+        {{ selectedList.length === fileList.length ? '取消全选' : '全选' }}
+      </view>
+      <view class="center">
+        已选中{{ selectedList.length }}个文件
+      </view>
+      <view class="right"
+            @tap="handleBatchCancel">
+        取消
+      </view>
+    </view>
   </view>
 </template>
 
@@ -59,11 +109,10 @@ export default {
     inChoose: {
       type: Boolean,
       default: false
-    }
-  },
-  data () {
-    return {
-      list: []
+    },
+    selectedList: {
+      type: Array,
+      default: () => []
     }
   },
   methods: {
@@ -77,25 +126,24 @@ export default {
         this.$emit('onShowAction', item)
       }
     },
-    handleSelect (fileName) {
-      if (this.inChoose) {
-        const index = this.list.indexOf(fileName)
-        console.log(index)
-        if (~index) {
-          this.list.splice(index, 1)
-        } else {
-          this.list.push(fileName)
-        }
-        console.log(this.list)
-      }
-    },
     handleCheckboxGroupChange (e) {
-      this.list = e.detail
+      this.$emit('update:selectedList', e.detail)
+    },
+    handleBatchCancel () {
+      this.$emit('update:inChoose', false)
+    },
+    handleSelectAll () {
+      if (this.selectedList.length !== this.fileList.length) {
+        this.$emit('update:selectedList', this.fileList.map(item => item.fileName))
+      } else {
+        this.$emit('update:selectedList', [])
+      }
     }
   }
 }
 </script>
 <style lang='scss'>
+$main-color: #520cd4;
 .file-list {
   padding: 20px 0;
   .file-listitem {
@@ -143,6 +191,38 @@ export default {
         display: flex;
         align-items: center;
       }
+    }
+  }
+  .batch-select-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 140px;
+    background: #fff;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    .center {
+      width: 100%;
+      flex: 1;
+      text-align: center;
+      font-size: 36px;
+      color: #262626;
+      font-weight: bold;
+    }
+    .left,
+    .right {
+      padding: 0 40px;
+      font-size: 36px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .left {
+      color: rgb(10, 81, 204);
+    }
+    .right {
+      color: rgb(167, 61, 13);
     }
   }
   .van-checkbox__icon-wrap {
