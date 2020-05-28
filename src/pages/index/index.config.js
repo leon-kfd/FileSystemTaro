@@ -8,6 +8,7 @@ export default {
     'van-dialog': '../../components/vant/dialog/index',
     'van-field': '../../components/vant/field/index',
     "van-checkbox": "../../components/vant/checkbox/index",
-    "van-checkbox-group": "../../components/vant/checkbox-group/index"
+    "van-checkbox-group": "../../components/vant/checkbox-group/index",
+    "van-progress": "../../components/vant/progress/index"
   }
 }

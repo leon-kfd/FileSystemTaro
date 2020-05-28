@@ -29,6 +29,7 @@ const interceptor = function (chain) {
 }
 Taro.addInterceptor(interceptor)
 export const baseURL = 'https://www.kongfandong.cn/storage'
+// export const baseURL = 'http://localhost:5001/storage'
 export const instance = (method, url, data, options) => {
   return Taro.request({
     dataType: 'json',

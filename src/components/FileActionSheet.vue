@@ -16,13 +16,33 @@
             {{ actionFileInfo.showFileName || actionFileInfo.fileName }}
           </view>
         </view>
-        <view v-if="type==='file'"
+        <view v-if="isDownloading"
+              class="downloading-box">
+          <view class="text">
+            <view class="percent">
+              {{ downloadingInfo.progress }}%
+            </view>
+            <view class="load">
+              {{ downloadingInfo.totalBytesWritten }} / {{ downloadingInfo.totalBytesExpectedToWrite }}
+            </view>
+          </view>
+          <van-progress :percentage="downloadingInfo.progress"
+                        :show-pivot="false"
+                        color="linear-gradient(to right, #be99ff, #7232dd)" />
+        </view>
+        <view v-if="type==='file' && !isDownloading"
               class="operation-list">
           <view v-show="!actionFileInfo.isFolder"
                 class="operation-list-item"
                 @tap="handleActionDownload">
             <van-icon name="down"
                       size="24px" /> 下载
+          </view>
+          <view v-show="!actionFileInfo.isFolder && previewArr.includes(actionFileInfo.suffix)"
+                class="operation-list-item"
+                @tap="handleActionPreview">
+            <van-icon name="eye-o"
+                      size="24px" /> 预览
           </view>
           <view v-show="actionFileInfo.isFolder"
                 class="operation-list-item"
@@ -142,6 +162,14 @@ export default {
       renameVisible: false,
       renamingPrefix: '',
       renamingSuffix: '',
+      isDownloading: false,
+      downloadingTask: null,
+      downloadingInfo: {
+        progress: 0,
+        totalBytesWritten: 0,
+        totalBytesExpectedToWrite: 0
+      },
+      previewArr: ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf']
     }
   },
   methods: {
@@ -153,6 +181,7 @@ export default {
       this.delete([this.actionFileInfo])
     },
     handleActionOpen () {
+      this.$emit('update:actionVisible', false)
       this.$emit('onOpen', this.actionFileInfo)
     },
     handleActionRename () {
@@ -191,11 +220,56 @@ export default {
     handleActionDownload () {
       const targetPath = this.currentPathArr.join('/') + '/' + this.actionFileInfo.fileName
       const realPath = targetPath.replace('$Root', this.$baseURL)
+      const sessionId = Taro.getStorageSync('sessionId')
+      const _this = this
+      this.downloadTask = wx.downloadFile({
+        url: realPath,
+        header: {
+          'sessionid': sessionId
+        },
+        success (data) {
+          const { tempFilePath } = data
+          Taro.saveFile({
+            tempFilePath
+          }).then(data => {
+            const { savedFilePath } = data
+            _this.$notify({ type: 'success', message: `文件已被保存到${savedFilePath}`, duration: 2500 })
+            _this.$nextTick(() => {
+              _this.isDownloading = false
+              _this.downloadingInfo = {
+                progress: 0,
+                totalBytesWritten: 0,
+                totalBytesExpectedToWrite: 0
+              }
+              _this.$emit('update:actionVisible', false)
+            })
+          })
+        },
+        fail () {
+          _this.$notify({ type: 'danger', message: `文件大小超出限制，请使用PC端进行下载`, duration: 2000 })
+        }
+      })
+      this.downloadTask.onProgressUpdate((res) => {
+        this.isDownloading = true
+        const { progress, totalBytesWritten, totalBytesExpectedToWrite } = res
+        this.downloadingInfo = { progress, totalBytesWritten, totalBytesExpectedToWrite }
+      })
+    },
+    handleActionPreview () {
+      const targetPath = this.currentPathArr.join('/') + '/' + this.actionFileInfo.fileName
+      const realPath = targetPath.replace('$Root', this.$baseURL)
+      const sessionId = Taro.getStorageSync('sessionId')
+      const _this = this
       Taro.downloadFile({
-        url: realPath
+        url: realPath,
+        header: {
+          'sessionid': sessionId
+        }
       }).then(data => {
-      }, data => {
-        this.$notify({ type: 'danger', message: '文件大小超出限制，无法下载，请使用PC端下载', duration: 2500 })
+        const { tempFilePath } = data
+        Taro.openDocument({
+          filePath: tempFilePath
+        })
       })
     },
     handleTrashRestore () {
@@ -271,6 +345,9 @@ export default {
             name: 'file',
             formData: {
               targetPath: _this.currentPathArr.join('/')
+            },
+            header: {
+              sessionid: Taro.getStorageSync('sessionId')
             }
           }).then(data => {
             try {
@@ -320,6 +397,7 @@ export default {
 </script>
 <style lang='scss'>
 $main-color: #520cd4;
+
 .file-action-sheet {
   .rename-input-box {
     display: flex;
@@ -360,5 +438,74 @@ $main-color: #520cd4;
     color: #999;
     line-height: 1.4;
   }
+  .operation-box {
+    .operation-header {
+      display: flex;
+      align-items: center;
+      padding: 20px 30px;
+      .icon {
+        width: 72px;
+        height: 72px;
+        min-width: 72px;
+      }
+      .file-name {
+        color: #262626;
+        font-size: 36px;
+        font-weight: bold;
+        width: 100%;
+
+        margin: 10px 16px;
+      }
+    }
+    .operation-list-item {
+      margin: 20px 0;
+      padding: 0 20px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      font-weight: bold;
+      color: #262626;
+      font-size: 36px;
+      .van-icon {
+        margin-right: 20px;
+      }
+    }
+    .operation-cancel {
+      text-align: center;
+      line-height: 80px;
+      margin-top: 20px;
+      color: #262626;
+      font-size: 36px;
+      font-weight: bold;
+      border-top: 10px solid #f5f5f6;
+    }
+  }
+  .downloading-box {
+    padding: 20px 40px;
+    .text {
+      display: flex;
+      margin-bottom: 20px;
+      align-items: center;
+      justify-content: space-between;
+      .percent {
+        font-size: 36px;
+        font-weight: bold;
+        color: #262626;
+      }
+      .load {
+        font-size: 28px;
+        color: rgb(77, 77, 184);
+      }
+    }
+  }
+}
+.full {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  background: #fff;
+  z-index: 99999;
+  top: 0;
+  left: 0;
 }
 </style>

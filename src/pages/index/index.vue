@@ -81,8 +81,11 @@ export default {
   computed: {
     computedFileList () {
       return this.fileList.map(item => {
+        const arr = item.fileName.split('.')
+        const suffix = arr[arr.length - 1]
         return {
           icon: iconFormatter(item.fileName, item.isFolder),
+          suffix,
           ...item,
           size: sizeFormatter(item.size)
         }
@@ -92,8 +95,11 @@ export default {
     },
     computedTrashList () {
       return this.trashList.map(item => {
+        const arr = item.fileName.split('.')
+        const suffix = arr[arr.length - 1]
         return {
           icon: iconFormatter(item.fileName, item.isFolder),
+          suffix,
           ...item
         }
       }).sort((a, b) => {
@@ -239,50 +245,6 @@ export default {
   padding-top: 125px;
   .home-content {
     padding-bottom: 110px;
-  }
-}
-.operation-box {
-  .operation-header {
-    display: flex;
-    align-items: center;
-    padding: 20px 30px;
-    .icon {
-      width: 72px;
-      height: 72px;
-      min-width: 72px;
-    }
-    .file-name {
-      color: #262626;
-      font-size: 36px;
-      font-weight: bold;
-      width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      margin: 10px 16px;
-    }
-  }
-  .operation-list-item {
-    margin: 20px 0;
-    padding: 0 20px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    font-weight: bold;
-    color: #262626;
-    font-size: 36px;
-    .van-icon {
-      margin-right: 20px;
-    }
-  }
-  .operation-cancel {
-    text-align: center;
-    line-height: 80px;
-    margin-top: 20px;
-    color: #262626;
-    font-size: 36px;
-    font-weight: bold;
-    border-top: 10px solid #f5f5f6;
   }
 }
 </style>
