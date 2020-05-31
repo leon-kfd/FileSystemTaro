@@ -16,53 +16,55 @@
             {{ actionFileInfo.showFileName || actionFileInfo.fileName }}
           </view>
         </view>
-        <view v-if="isDownloading"
-              class="downloading-box">
-          <view class="text">
-            <view class="percent">
-              {{ downloadingInfo.progress }}%
+        <view v-if="type==='file'">
+          <view v-if="isDownloading"
+                class="downloading-box">
+            <view class="text">
+              <view class="percent">
+                {{ downloadingInfo.progress }}%
+              </view>
+              <view class="load">
+                {{ downloadingInfo.totalBytesWritten }} / {{ downloadingInfo.totalBytesExpectedToWrite }}
+              </view>
             </view>
-            <view class="load">
-              {{ downloadingInfo.totalBytesWritten }} / {{ downloadingInfo.totalBytesExpectedToWrite }}
-            </view>
+            <van-progress :percentage="downloadingInfo.progress"
+                          :show-pivot="false"
+                          color="linear-gradient(to right, #be99ff, #7232dd)" />
           </view>
-          <van-progress :percentage="downloadingInfo.progress"
-                        :show-pivot="false"
-                        color="linear-gradient(to right, #be99ff, #7232dd)" />
-        </view>
-        <view v-if="type==='file' && !isDownloading"
-              class="operation-list">
-          <view v-show="!actionFileInfo.isFolder"
+          <view v-else
+                class="operation-list">
+            <!-- <view v-show="!actionFileInfo.isFolder"
                 class="operation-list-item"
                 @tap="handleActionDownload">
             <van-icon name="down"
                       size="24px" /> 下载
-          </view>
-          <view v-show="!actionFileInfo.isFolder && previewArr.includes(actionFileInfo.suffix)"
-                class="operation-list-item"
-                @tap="handleActionPreview">
-            <van-icon name="eye-o"
-                      size="24px" /> 预览
-          </view>
-          <view v-show="actionFileInfo.isFolder"
-                class="operation-list-item"
-                @tap="handleActionOpen">
-            <van-icon name="circle"
-                      size="24px" /> 打开
-          </view>
-          <view class="operation-list-item">
-            <van-icon name="records"
-                      size="24px" /> 移动
-          </view>
-          <view class="operation-list-item"
-                @tap="handleActionRename">
-            <van-icon name="edit"
-                      size="24px" /> 重命名
-          </view>
-          <view class="operation-list-item"
-                @tap="handleActionDelete">
-            <van-icon name="delete"
-                      size="24px" /> 删除
+          </view> -->
+            <view v-show="!actionFileInfo.isFolder && previewArr.includes(actionFileInfo.suffix)"
+                  class="operation-list-item"
+                  @tap="handleActionPreview">
+              <van-icon name="eye-o"
+                        size="24px" /> 预览
+            </view>
+            <view v-show="actionFileInfo.isFolder"
+                  class="operation-list-item"
+                  @tap="handleActionOpen">
+              <van-icon name="circle"
+                        size="24px" /> 打开
+            </view>
+            <view class="operation-list-item">
+              <van-icon name="records"
+                        size="24px" /> 移动
+            </view>
+            <view class="operation-list-item"
+                  @tap="handleActionRename">
+              <van-icon name="edit"
+                        size="24px" /> 重命名
+            </view>
+            <view class="operation-list-item"
+                  @tap="handleActionDelete">
+              <van-icon name="delete"
+                        size="24px" /> 删除
+            </view>
           </view>
         </view>
         <view v-if="type==='trash'"
@@ -133,10 +135,19 @@
         </view>
       </view>
     </van-dialog>
+    <view v-if="mediaPreviewVisible > 0"
+          class="media-preview"
+          @tap="mediaPreviewVisible = 0">
+      <image :src="imgPreviewURL"
+             mode="aspectFill"
+             class="image" />
+    </view>
   </view>
 </template>
 
 <script>
+const imgSuffixArr = ['jpg', 'png', 'svg', 'gif']
+const documentSuffixArr = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf']
 import Taro from '@tarojs/taro'
 export default {
   props: {
@@ -169,11 +180,24 @@ export default {
         totalBytesWritten: 0,
         totalBytesExpectedToWrite: 0
       },
-      previewArr: ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf']
+      previewArr: [...imgSuffixArr, ...documentSuffixArr],
+      mediaPreviewVisible: 0,
+      imgPreviewURL: '',
+      videoPreviewURL: ''
     }
   },
   methods: {
     handleActionCancel () {
+      if (this.downloadTask) {
+        this.downloadTask.abort()
+        this.isDownloading = false
+        this.downloadingInfo = {
+          progress: 0,
+          totalBytesWritten: 0,
+          totalBytesExpectedToWrite: 0
+        }
+        this.downloadTask = null
+      }
       this.$emit('update:actionVisible', false)
     },
     handleActionDelete () {
@@ -218,58 +242,38 @@ export default {
       }
     },
     handleActionDownload () {
+      this.$notify({ type: 'danger', message: '抱歉,由于小程序限制,该功能暂不能提供,请使用PC端进行下载', duration: 3000 })
+      this.$emit('update:actionVisible', false)
+    },
+    handleActionPreview () {
       const targetPath = this.currentPathArr.join('/') + '/' + this.actionFileInfo.fileName
       const realPath = targetPath.replace('$Root', this.$baseURL)
       const sessionId = Taro.getStorageSync('sessionId')
-      const _this = this
       this.downloadTask = wx.downloadFile({
         url: realPath,
         header: {
           'sessionid': sessionId
         },
-        success (data) {
+        success: (data) => {
           const { tempFilePath } = data
-          Taro.saveFile({
-            tempFilePath
-          }).then(data => {
-            const { savedFilePath } = data
-            _this.$notify({ type: 'success', message: `文件已被保存到${savedFilePath}`, duration: 2500 })
-            _this.$nextTick(() => {
-              _this.isDownloading = false
-              _this.downloadingInfo = {
-                progress: 0,
-                totalBytesWritten: 0,
-                totalBytesExpectedToWrite: 0
-              }
-              _this.$emit('update:actionVisible', false)
+          if (imgSuffixArr.includes(this.actionFileInfo.suffix)) {
+            this.mediaPreviewVisible = 1
+            this.imgPreviewURL = tempFilePath
+          } else if (documentSuffixArr.includes(this.actionFileInfo.suffix)) {
+            Taro.openDocument({
+              filePath: tempFilePath
             })
-          })
+          }
+          this.handleActionCancel()
         },
-        fail () {
-          _this.$notify({ type: 'danger', message: `文件大小超出限制，请使用PC端进行下载`, duration: 2000 })
+        fail: () => {
+          this.$notify({ type: 'danger', message: `下载失败`, duration: 2000 })
         }
       })
       this.downloadTask.onProgressUpdate((res) => {
         this.isDownloading = true
         const { progress, totalBytesWritten, totalBytesExpectedToWrite } = res
         this.downloadingInfo = { progress, totalBytesWritten, totalBytesExpectedToWrite }
-      })
-    },
-    handleActionPreview () {
-      const targetPath = this.currentPathArr.join('/') + '/' + this.actionFileInfo.fileName
-      const realPath = targetPath.replace('$Root', this.$baseURL)
-      const sessionId = Taro.getStorageSync('sessionId')
-      const _this = this
-      Taro.downloadFile({
-        url: realPath,
-        header: {
-          'sessionid': sessionId
-        }
-      }).then(data => {
-        const { tempFilePath } = data
-        Taro.openDocument({
-          filePath: tempFilePath
-        })
       })
     },
     handleTrashRestore () {
@@ -334,35 +338,42 @@ export default {
       });
     },
     handleUploadFile (type = 1) {
-      const _this = this
       const callback = (res) => {
-        _this.$emit('update:actionVisible', false)
+        this.$emit('update:actionVisible', false)
+        this.$toast.loading({
+          mask: true,
+          message: '上传中...'
+        })
         const filePaths = res.tempFilePaths
-        filePaths.map(item => {
-          Taro.uploadFile({
-            url: _this.$baseURL + '/simpleUpload',
-            filePath: item,
-            name: 'file',
-            formData: {
-              targetPath: _this.currentPathArr.join('/')
-            },
-            header: {
-              sessionid: Taro.getStorageSync('sessionId')
-            }
-          }).then(data => {
-            try {
-              const res = JSON.parse(data.data)
-              if (res.errCode === 200) {
-                const { fileName } = res.data
-                _this.$notify({ type: 'success', message: `上传成功，文件保存为${fileName}`, duration: 2000 })
-                _this.$emit('onNeedRefresh')
-              } else {
-                _this.$notify({ type: 'success', message: `上传失败，${res.errMsg}`, duration: 2000 })
+        Promise.all(
+          filePaths.map(item => {
+            return Taro.uploadFile({
+              url: this.$baseURL + '/simpleUpload',
+              filePath: item,
+              name: 'file',
+              formData: {
+                targetPath: this.currentPathArr.join('/')
+              },
+              header: {
+                sessionid: Taro.getStorageSync('sessionId')
               }
-            } catch (e) {
-              _this.$notify({ type: 'success', message: `上传失败，服务端错误`, duration: 2000 })
-            }
+            }).then(data => {
+              try {
+                const res = JSON.parse(data.data)
+                if (res.errCode === 200) {
+                  const { fileName } = res.data
+                  this.$notify({ type: 'success', message: `上传成功，文件保存为${fileName}`, duration: 2000 })
+                  this.$emit('onNeedRefresh')
+                } else {
+                  this.$notify({ type: 'success', message: `上传失败，${res.errMsg}`, duration: 2000 })
+                }
+              } catch (e) {
+                this.$notify({ type: 'success', message: `上传失败，服务端错误`, duration: 2000 })
+              }
+            })
           })
+        ).then(() => {
+          this.$toast.clear()
         })
       }
       if (type === 1) {
@@ -499,13 +510,16 @@ $main-color: #520cd4;
     }
   }
 }
-.full {
+.media-preview {
   position: fixed;
   width: 100vw;
   height: 100vh;
-  background: #fff;
+  background: rgba(0, 0, 0, 0.8);
   z-index: 99999;
   top: 0;
   left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
 }
 </style>

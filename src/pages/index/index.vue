@@ -1,11 +1,9 @@
 <template>
   <view class="home">
-    <view v-if="!isLogin">
-      正在登录...
-    </view>
-    <view v-else>
+    <view>
       <van-notify id="van-notify" />
       <van-dialog id="van-dialog" />
+      <van-toast id="van-toast" />
       <HeaderNav :active-nav="activeNav"
                  @onChangeNav="changeNav" />
       <view v-if="activeNav === 0"
@@ -74,7 +72,6 @@ export default {
       trashActionVisible: false,
       actionTrashInfo: {},
       selectedList: [],
-      isLogin: true,
       inChoose: false
     }
   },
@@ -126,44 +123,43 @@ export default {
           this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
           this.getData()
         }, () => {
-          this.handleError(3)
+          this.handleError()
         })
       } else {
-        this.handleError(2)
+        this.handleError()
       }
     }, () => {
-      this.handleError(1)
+      this.handleError()
     })
-    // this.auth()
   },
   methods: {
     handleError (e) {
       this.$notify({ type: 'danger', message: e || '登录失败', duration: 1000 })
     },
-    auth () {
-      Taro.checkSession().then(data => {
-        this.getData()
-      }, () => {
-        Taro.login().then(data => {
-          if (data.code) {
-            this.$post('/wechatLogin', {
-              code: data.code
-            }).then(data => {
-              const { sessionId } = data
-              Taro.setStorageSync('sessionId', sessionId)
-              this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
-              this.getData()
-            }, () => {
-              this.handleError(3)
-            })
-          } else {
-            this.handleError(2)
-          }
-        }, () => {
-          this.handleError(1)
-        })
-      })
-    },
+    // auth () {
+    //   Taro.checkSession().then(data => {
+    //     this.getData()
+    //   }, () => {
+    //     Taro.login().then(data => {
+    //       if (data.code) {
+    //         this.$post('/wechatLogin', {
+    //           code: data.code
+    //         }).then(data => {
+    //           const { sessionId } = data
+    //           Taro.setStorageSync('sessionId', sessionId)
+    //           this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
+    //           this.getData()
+    //         }, () => {
+    //           this.handleError(3)
+    //         })
+    //       } else {
+    //         this.handleError(2)
+    //       }
+    //     }, () => {
+    //       this.handleError(1)
+    //     })
+    //   })
+    // },
     handlePathClick (path) {
       const index = this.currentPathArr.findIndex(item => item === path)
       if (~index) {

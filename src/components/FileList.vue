@@ -145,7 +145,7 @@ export default {
 <style lang='scss'>
 $main-color: #520cd4;
 .file-list {
-  padding: 20px 0;
+  padding: 20px 0 50px;
   .file-listitem {
     display: flex;
     align-items: center;

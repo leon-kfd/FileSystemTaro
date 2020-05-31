@@ -2,8 +2,9 @@ import Vue from 'vue'
 import store from './store'
 import './app.scss'
 import { instance, baseURL } from './utils/fetch'
-import Notify from './components/vant/notify/notify';
+import Notify from './components/vant/notify/notify'
 import Dialog from './components/vant/dialog/dialog'
+import Toast from './components/vant/toast/toast'
 
 // Vue.config.productionTip = false
 Vue.prototype.$get = (url, data, options) => instance('get', url, data, options)
@@ -11,13 +12,13 @@ Vue.prototype.$post = (url, data, options) => instance('post', url, data, option
 Vue.prototype.$baseURL = baseURL
 Vue.prototype.$notify = Notify
 Vue.prototype.$dialog = Dialog
+Vue.prototype.$toast = Toast
 
 const App = new Vue({
   store,
   onShow (options) {
   },
   render (h) {
-    // this.$slots.default 是将要会渲染的页面
     return h('block', this.$slots.default)
   }
 })
