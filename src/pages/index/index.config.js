@@ -1,7 +1,6 @@
 export default {
   navigationBarTitleText: 'Howdy',
   usingComponents: {
-    'van-button': "../../components/vant/button/index",
     "van-icon": "../../components/vant/icon/index",
     'van-action-sheet': '../../components/vant/action-sheet/index',
     'van-notify': '../../components/vant/notify/index',
@@ -11,6 +10,5 @@ export default {
     "van-checkbox-group": "../../components/vant/checkbox-group/index",
     "van-progress": "../../components/vant/progress/index",
     "van-toast": "../../components/vant/toast/index"
-    // "van-overlay": "../../components/vant/overlay/index"
   }
 }

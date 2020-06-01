@@ -15,7 +15,8 @@
                   :selected-list.sync="selectedList"
                   @onOpen="handleOpen"
                   @onShowAction="handleShowFileAction" />
-        <FileActionSheet :current-path-arr="currentPathArr"
+        <FileActionSheet ref="fileActionSheet"
+                         :current-path-arr="currentPathArr"
                          :action-visible.sync="actionVisible"
                          :action-file-info="actionFileInfo"
                          type="file"
@@ -50,6 +51,9 @@ import FileActionSheet from '../../components/FileActionSheet.vue'
 import FileOperationFooter from '../../components/FileOperationFooter.vue'
 import { iconFormatter, sizeFormatter } from '../../utils/file-utils'
 import Taro from '@tarojs/taro'
+const imgSuffixArr = ['jpg', 'png', 'svg', 'gif']
+const videoSuffixArr = ['mp4', 'mov', 'm4v', '3gp', 'avi', 'm3u8']
+const documentSuffixArr = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf']
 export default {
   name: 'Index',
   components: {
@@ -113,53 +117,32 @@ export default {
     },
   },
   created () {
-    Taro.login().then(data => {
-      if (data.code) {
-        this.$post('/wechatLogin', {
-          code: data.code
-        }).then(data => {
-          const { sessionId } = data
-          Taro.setStorageSync('sessionId', sessionId)
-          this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
-          this.getData()
-        }, () => {
-          this.handleError()
-        })
-      } else {
-        this.handleError()
-      }
-    }, () => {
-      this.handleError()
-    })
+    this.auth()
   },
   methods: {
     handleError (e) {
       this.$notify({ type: 'danger', message: e || '登录失败', duration: 1000 })
     },
-    // auth () {
-    //   Taro.checkSession().then(data => {
-    //     this.getData()
-    //   }, () => {
-    //     Taro.login().then(data => {
-    //       if (data.code) {
-    //         this.$post('/wechatLogin', {
-    //           code: data.code
-    //         }).then(data => {
-    //           const { sessionId } = data
-    //           Taro.setStorageSync('sessionId', sessionId)
-    //           this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
-    //           this.getData()
-    //         }, () => {
-    //           this.handleError(3)
-    //         })
-    //       } else {
-    //         this.handleError(2)
-    //       }
-    //     }, () => {
-    //       this.handleError(1)
-    //     })
-    //   })
-    // },
+    auth () {
+      Taro.login().then(data => {
+        if (data.code) {
+          this.$post('/wechatLogin', {
+            code: data.code
+          }).then(data => {
+            const { sessionId } = data
+            Taro.setStorageSync('sessionId', sessionId)
+            this.$notify({ type: 'success', message: '自动登录成功', duration: 1000 })
+            this.getData()
+          }, () => {
+            this.handleError()
+          })
+        } else {
+          this.handleError()
+        }
+      }, () => {
+        this.handleError()
+      })
+    },
     handlePathClick (path) {
       const index = this.currentPathArr.findIndex(item => item === path)
       if (~index) {
@@ -219,6 +202,13 @@ export default {
         this.forwardArr.length = 0
         this.currentPathArr.push(item.fileName)
         this.getData()
+      } else if ([...imgSuffixArr, ...documentSuffixArr, ...videoSuffixArr].includes(item.suffix)) {
+        this.handleShowFileAction(item)
+        this.$nextTick(() => {
+          this.$refs.fileActionSheet.handleActionPreview()
+        })
+      } else {
+        this.$notify({ type: 'warning', message: '暂不支持打开或预览该类型文件', duration: 1000 })
       }
     },
     handleShowFileAction (item) {

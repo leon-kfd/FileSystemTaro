@@ -136,17 +136,29 @@
       </view>
     </van-dialog>
     <view v-if="mediaPreviewVisible > 0"
-          class="media-preview"
-          @tap="mediaPreviewVisible = 0">
-      <image :src="imgPreviewURL"
-             mode="aspectFill"
+          class="media-preview">
+      <view class="close"
+            @tap="handlePreviewClose">
+        <van-icon name="cross"
+                  size="36px"
+                  color="#f5f5f7" />
+      </view>
+      <image v-if="mediaPreviewVisible===1"
+             :src="imgPreviewURL"
+             mode="widthFix"
              class="image" />
+      <video v-if="mediaPreviewVisible===2"
+             id="video"
+             :autoplay="true"
+             class="video"
+             :src="videoPreviewURL" />
     </view>
   </view>
 </template>
 
 <script>
 const imgSuffixArr = ['jpg', 'png', 'svg', 'gif']
+const videoSuffixArr = ['mp4', 'mov', 'm4v', '3gp', 'avi', 'm3u8']
 const documentSuffixArr = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf']
 import Taro from '@tarojs/taro'
 export default {
@@ -180,13 +192,14 @@ export default {
         totalBytesWritten: 0,
         totalBytesExpectedToWrite: 0
       },
-      previewArr: [...imgSuffixArr, ...documentSuffixArr],
+      previewArr: [...imgSuffixArr, ...documentSuffixArr, ...videoSuffixArr],
       mediaPreviewVisible: 0,
       imgPreviewURL: '',
       videoPreviewURL: ''
     }
   },
   methods: {
+    nothing () { },
     handleActionCancel () {
       if (this.downloadTask) {
         this.downloadTask.abort()
@@ -245,36 +258,49 @@ export default {
       this.$notify({ type: 'danger', message: '抱歉,由于小程序限制,该功能暂不能提供,请使用PC端进行下载', duration: 3000 })
       this.$emit('update:actionVisible', false)
     },
-    handleActionPreview () {
-      const targetPath = this.currentPathArr.join('/') + '/' + this.actionFileInfo.fileName
+    handleActionPreview (el) {
+      const target = this.actionFileInfo
+      const targetPath = this.currentPathArr.join('/') + '/' + target.fileName
       const realPath = targetPath.replace('$Root', this.$baseURL)
       const sessionId = Taro.getStorageSync('sessionId')
-      this.downloadTask = wx.downloadFile({
-        url: realPath,
-        header: {
-          'sessionid': sessionId
-        },
-        success: (data) => {
-          const { tempFilePath } = data
-          if (imgSuffixArr.includes(this.actionFileInfo.suffix)) {
-            this.mediaPreviewVisible = 1
-            this.imgPreviewURL = tempFilePath
-          } else if (documentSuffixArr.includes(this.actionFileInfo.suffix)) {
-            Taro.openDocument({
-              filePath: tempFilePath
-            })
+      if (videoSuffixArr.includes(target.suffix)) {
+        this.handleActionCancel()
+        this.mediaPreviewVisible = 2
+        this.videoPreviewURL = realPath + '?sessionid=' + Taro.getStorageSync('sessionId')
+      } else if (this.previewArr.includes(target.suffix)) {
+        this.downloadTask = wx.downloadFile({
+          url: realPath,
+          header: {
+            'sessionid': sessionId
+          },
+          success: (data) => {
+            const { tempFilePath } = data
+            if (imgSuffixArr.includes(target.suffix)) {
+              this.mediaPreviewVisible = 1
+              this.imgPreviewURL = tempFilePath
+            } else if (documentSuffixArr.includes(target.suffix)) {
+              Taro.openDocument({
+                filePath: tempFilePath
+              })
+            }
+            this.handleActionCancel()
+          },
+          fail: () => {
+            this.$notify({ type: 'danger', message: `下载失败`, duration: 2000 })
           }
-          this.handleActionCancel()
-        },
-        fail: () => {
-          this.$notify({ type: 'danger', message: `下载失败`, duration: 2000 })
-        }
-      })
-      this.downloadTask.onProgressUpdate((res) => {
-        this.isDownloading = true
-        const { progress, totalBytesWritten, totalBytesExpectedToWrite } = res
-        this.downloadingInfo = { progress, totalBytesWritten, totalBytesExpectedToWrite }
-      })
+        })
+        this.downloadTask.onProgressUpdate((res) => {
+          this.isDownloading = true
+          const { progress, totalBytesWritten, totalBytesExpectedToWrite } = res
+          this.downloadingInfo = { progress, totalBytesWritten, totalBytesExpectedToWrite }
+        })
+      }
+    },
+    handlePreviewClose () {
+      this.videoPreviewURL = ''
+      const video = Taro.createVideoContext('video')
+      video.stop()
+      this.mediaPreviewVisible = 0
     },
     handleTrashRestore () {
       if (this.actionFileInfo.fromPath) {
@@ -344,7 +370,7 @@ export default {
           mask: true,
           message: '上传中...'
         })
-        const filePaths = res.tempFilePaths
+        const filePaths = type === 3 ? res.tempFiles.map(item => item.path) : res.tempFilePaths
         Promise.all(
           filePaths.map(item => {
             return Taro.uploadFile({
@@ -521,5 +547,18 @@ $main-color: #520cd4;
   display: flex;
   align-items: center;
   justify-content: space-around;
+  .close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 100000;
+  }
+  .image {
+    width: 95vw;
+  }
+  .video {
+    width: 100vw;
+    height: 85vh;
+  }
 }
 </style>
