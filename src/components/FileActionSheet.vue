@@ -149,8 +149,8 @@
              class="image" />
       <video v-if="mediaPreviewVisible===2"
              id="video"
-             :autoplay="true"
              class="video"
+             :autoplay="true"
              :src="videoPreviewURL" />
     </view>
   </view>
@@ -368,7 +368,8 @@ export default {
         this.$emit('update:actionVisible', false)
         this.$toast.loading({
           mask: true,
-          message: '上传中...'
+          message: '上传中...',
+          duration: 0
         })
         const filePaths = type === 3 ? res.tempFiles.map(item => item.path) : res.tempFilePaths
         Promise.all(

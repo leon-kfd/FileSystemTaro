@@ -10,6 +10,10 @@
             class="home-content">
         <FolderPath :current-path-arr="currentPathArr"
                     @onPathClick="handlePathClick" />
+        <view class="control-height-40" />
+        <view class="loading-box">
+          <van-loading color="#1989fa" />
+        </view>
         <FileList :file-list="computedFileList"
                   :in-choose.sync="inChoose"
                   :selected-list.sync="selectedList"
@@ -31,6 +35,9 @@
                              @onBatchCancel="inChoose=false" />
       </view>
       <view v-if="activeNav === 1">
+        <view class="loading-box">
+          <van-loading color="#1989fa" />
+        </view>
         <FileList :file-list="computedTrashList"
                   :is-trash="true"
                   @onShowAction="handleShowTrashAction" />
@@ -76,7 +83,8 @@ export default {
       trashActionVisible: false,
       actionTrashInfo: {},
       selectedList: [],
-      inChoose: false
+      inChoose: false,
+      firstLoadFlag: true
     }
   },
   computed: {
@@ -150,7 +158,8 @@ export default {
         this.getData()
       }
     },
-    getData () {
+    getData (pull) {
+      // !pull && Taro.startPullDownRefresh()
       this.inChoose = false
       this.selectedList = []
       this.$nextTick(() => {
@@ -179,19 +188,25 @@ export default {
               handleError(1)
             })
           }
+        }).finally(() => {
+          setTimeout(() => Taro.stopPullDownRefresh(), 500)
         })
       })
     },
-    getTrashList () {
+    getTrashList (pull) {
+      // !pull && Taro.startPullDownRefresh()
       this.$nextTick(() => {
         this.$get('/getTrashList').then(data => {
           this.trashList = data
+          this.firstLoadFlag = false
+        }).finally(() => {
+          setTimeout(() => Taro.stopPullDownRefresh(), 500)
         })
       })
     },
     changeNav (index) {
       this.activeNav = index
-      if (index === 1) {
+      if (index === 1 && this.firstLoadFlag) {
         this.$nextTick(() => {
           this.getTrashList()
         })
@@ -222,15 +237,31 @@ export default {
     handleBatchOperation () {
       this.inChoose = true
     }
+  },
+  onPullDownRefresh () {
+    if (this.activeNav === 0) {
+      this.getData(true)
+    } else if (this.activeNav === 1) {
+      this.getTrashList(true)
+    }
   }
 }
 </script>
 
 <style lang="scss">
 .home {
-  padding-top: 125px;
+  padding-top: 80px;
   .home-content {
     padding-bottom: 110px;
   }
+}
+.control-height-40 {
+  height: 80px;
+}
+.loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -60px;
 }
 </style>

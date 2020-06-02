@@ -9,6 +9,7 @@ export default {
     "van-checkbox": "../../components/vant/checkbox/index",
     "van-checkbox-group": "../../components/vant/checkbox-group/index",
     "van-progress": "../../components/vant/progress/index",
-    "van-toast": "../../components/vant/toast/index"
+    "van-toast": "../../components/vant/toast/index",
+    "van-loading": "../../components/vant/loading/index"
   }
 }
