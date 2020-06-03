@@ -51,9 +51,15 @@
               <van-icon name="circle"
                         size="24px" /> 打开
             </view>
-            <view class="operation-list-item">
+            <view class="operation-list-item"
+                  @tap="handleActionMove(1)">
               <van-icon name="records"
                         size="24px" /> 移动
+            </view>
+            <view class="operation-list-item"
+                  @tap="handleActionMove(2)">
+              <van-icon name="exchange"
+                        size="24px" /> 复制
             </view>
             <view class="operation-list-item"
                   @tap="handleActionRename">
@@ -429,6 +435,11 @@ export default {
           }
         })
       }
+    },
+    handleActionMove (type = 1) {
+      const pathPrefix = this.currentPathArr.join('/')
+      this.$emit('onMove', [pathPrefix + '/' + this.actionFileInfo.fileName], type)
+      this.$emit('update:actionVisible', false)
     }
   }
 }

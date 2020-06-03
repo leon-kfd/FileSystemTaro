@@ -25,14 +25,19 @@
                          :action-file-info="actionFileInfo"
                          type="file"
                          @onOpen="handleOpen"
+                         @onMove="handleMoveSelect"
                          @onNeedRefresh="getData" />
         <FileOperationFooter :in-choose="inChoose"
+                             :in-move="clipboardList.length > 0"
                              :current-path-arr="currentPathArr"
                              :file-list="computedFileList"
                              :selected-list="selectedList"
                              @onNeedRefresh="getData"
                              @onBatchOperation="handleBatchOperation"
-                             @onBatchCancel="inChoose=false" />
+                             @onBatchCancel="handleBatchCancel"
+                             @onMoveCancel="handleMoveCancel"
+                             @onPaste="handlePaste"
+                             @onMove="handleMoveSelect" />
       </view>
       <view v-if="activeNav === 1">
         <view class="loading-box">
@@ -84,7 +89,9 @@ export default {
       actionTrashInfo: {},
       selectedList: [],
       inChoose: false,
-      firstLoadFlag: true
+      firstLoadFlag: true,
+      clipboardList: [],
+      moveType: 1
     }
   },
   computed: {
@@ -236,6 +243,37 @@ export default {
     },
     handleBatchOperation () {
       this.inChoose = true
+    },
+    handleBatchCancel () {
+      this.inChoose = false
+      this.selectedList = []
+    },
+    handleMoveSelect (rows, moveType = 1) {
+      this.handleBatchCancel()
+      this.clipboardList = rows
+      this.moveType = moveType
+      this.$notify({ type: 'success', message: '已添加到剪贴板，请进入相应目录进行粘贴', duration: 2000 })
+    },
+    handleMoveCancel () {
+      this.clipboardList = []
+    },
+    handlePaste () {
+      this.$dialog.confirm({
+        message: `是否确认将所需文件 ${this.moveType === 1 ? '移动' : '复制'} 到当前目录?`,
+      }).then(() => {
+        this.$post('/move', {
+          moveFrom: this.clipboardList,
+          moveTo: this.currentPathArr.join('/'),
+          moveType: this.moveType - 1
+        }).then(data => {
+          this.$notify({ type: 'success', message: '操作成功', duration: 1000 })
+          this.getData()
+          this.clipboardList = []
+        }).finally(() => {
+        })
+      }).catch(() => {
+        // on cancel
+      });
     }
   },
   onPullDownRefresh () {

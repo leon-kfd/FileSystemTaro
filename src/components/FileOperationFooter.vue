@@ -1,6 +1,6 @@
 <template>
   <view class="file-operation-footer">
-    <view v-if="!inChoose"
+    <view v-if="!inChoose && !inMove"
           class="common-footer">
       <view class="upload-btn-box"
             @tap="handleUpload">
@@ -24,21 +24,32 @@
       </view>
       <view class="right-btn">
         <view class="set-batch"
-              @tap="handleBatchOperation">
+              @tap.stop="handleBatchOperation">
           <image class="icon"
                  :src="batchImg" /> 批量操作
         </view>
       </view>
     </view>
-    <view v-else
+    <view v-else-if="inChoose"
           class="batch-footer">
       <view class="operation-list-item"
-            :class="{disabled: !hasChoose}">
+            :class="{disabled: !hasChoose}"
+            @tap="handleMove(1)">
         <van-icon name="records"
                   :color="hasChoose?'#fff':'#805D91'"
                   size="24px" />
         <view class="text">
           移动
+        </view>
+      </view>
+      <view class="operation-list-item"
+            :class="{disabled: !hasChoose}"
+            @tap="handleMove(2)">
+        <van-icon name="exchange"
+                  :color="hasChoose?'#fff':'#805D91'"
+                  size="24px" />
+        <view class="text">
+          复制
         </view>
       </view>
       <view class="operation-list-item"
@@ -51,7 +62,7 @@
           删除
         </view>
       </view>
-      <view class="operation-list-item"
+      <!-- <view class="operation-list-item"
             :class="{disabled: !hasChoose}">
         <van-icon name="exchange"
                   :color="hasChoose?'#fff':'#805D91'"
@@ -59,12 +70,27 @@
         <view class="text">
           分享
         </view>
-      </view>
+      </view> -->
       <view class="cancel-batch"
             @tap="handleBatchCancel">
         <view class="text">
           取消批量
         </view>
+      </view>
+    </view>
+    <view v-else
+          class="move-footer">
+      <view class="btn-paste"
+            @tap="handlePaste">
+        <van-icon name="completed"
+                  size="24px" />
+        <view class="text">
+          粘贴到此目录
+        </view>
+      </view>
+      <view class="btn-cancel-move"
+            @tap="handleMoveCancel">
+        取消移动
       </view>
     </view>
     <van-dialog :useSlot="true"
@@ -108,6 +134,10 @@ export default {
       default: () => []
     },
     inChoose: {
+      type: Boolean,
+      default: false
+    },
+    inMove: {
       type: Boolean,
       default: false
     },
@@ -165,9 +195,24 @@ export default {
     handleBatchCancel () {
       this.$emit('onBatchCancel')
     },
+    handleMoveCancel () {
+      this.$emit('onMoveCancel')
+    },
+    handlePaste () {
+      this.$emit('onPaste')
+    },
     handleBatchDelete () {
-      const selectedList = this.fileList.filter(item => this.selectedList.includes(item.fileName))
-      this.$refs.fileAction.delete(selectedList)
+      if (this.hasChoose) {
+        const selectedList = this.fileList.filter(item => this.selectedList.includes(item.fileName))
+        this.$refs.fileAction.delete(selectedList)
+      }
+    },
+    handleMove (type = 1) {
+      if (this.hasChoose) {
+        const pathPrefix = this.currentPathArr.join('/')
+        const rows = this.selectedList.map(item => `${pathPrefix}/${item}`)
+        this.$emit('onMove', rows, type)
+      }
     }
   }
 }
@@ -314,6 +359,42 @@ $main-color: #520cd4;
         line-height: 80px;
         color: rgb(167, 61, 13);
       }
+    }
+  }
+  .move-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    height: 120px;
+    align-items: center;
+    justify-content: space-around;
+    background: rgb(235, 237, 248);
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 4px solid #262626;
+    .btn-paste {
+      height: 92px;
+      padding: 0 3%;
+      border-radius: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50%;
+      font-size: 36px;
+      font-weight: bold;
+      background: rgb(18, 59, 180);
+      color: #fff;
+      .text {
+        margin-left: 10px;
+      }
+    }
+    .btn-cancel-move {
+      font-size: 36px;
+      font-weight: bold;
+      color: rgb(167, 61, 13);
+      width: 30%;
     }
   }
 }
