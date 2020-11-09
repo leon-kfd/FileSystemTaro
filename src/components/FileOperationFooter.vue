@@ -290,7 +290,7 @@ $main-color: #520cd4;
     .left-btn,
     .right-btn {
       position: absolute;
-      bottom: 0;
+      top: 4rpx;
       width: 35%;
       height: 92px;
       padding: 0 3%;
@@ -355,8 +355,9 @@ $main-color: #520cd4;
         border-radius: 36px;
         width: 80%;
         background: rgb(228, 218, 238);
-        text-align: center;
-        line-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         color: rgb(167, 61, 13);
       }
     }
