@@ -299,7 +299,8 @@ export default {
           this.isDownloading = true
           let { progress, totalBytesWritten, totalBytesExpectedToWrite } = res
           if (totalBytesExpectedToWrite === -1) {
-            totalBytesExpectedToWrite = ~~(target.size.replace(/[^\d\.]/g, '') * 1024)
+            // totalBytesExpectedToWrite = ~~(target.size.replace(/[^\d\.]/g, '') * 1024)
+            totalBytesExpectedToWrite = target.size
             progress = ~~(totalBytesWritten / totalBytesExpectedToWrite * 100)
           }
           this.downloadingInfo = { progress, totalBytesWritten, totalBytesExpectedToWrite }

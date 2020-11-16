@@ -103,7 +103,8 @@ export default {
           icon: iconFormatter(item.fileName, item.isFolder),
           suffix,
           ...item,
-          size: sizeFormatter(item.size)
+          size: sizeFormatter(item.size),
+          realSize: item.size
         }
       }).sort((a, b) => {
         return ~~b.isFolder - ~~a.isFolder
